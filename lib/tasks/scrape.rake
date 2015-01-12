@@ -50,7 +50,9 @@ namespace :scrape do
       puts "#{name}: #{symbol}"
       Company.create(:name => name, :symbol => symbol)
     end
-
+    #destroy the header
+    Company.first.destroy_all
+    
     # csv_text = File.read('lib/tasks/Languages.csv')
     # csv = CSV.parse(csv_text, :headers => true)
 
