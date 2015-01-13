@@ -1,2 +1,18 @@
 <h1><%= @company.name %></h1>
 <h2><%= @company.symbol %></h2>
+
+<table>
+  <tbody>
+    <% AnnualIncome.columns[4..52].each_with_index do |column, index| %>
+      <tr>
+        <td>
+          <%= column.name %>
+        </td><td>
+          <%= @company.annual_incomes[0][column.name] %>
+          <%# error %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+

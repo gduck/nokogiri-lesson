@@ -1,38 +1,45 @@
-namespace :scrape do
-  # this is a description of your task
-  desc "Scrape Google example"
-
-  # this is your task function
+namespace :scrape do 
+  desc "Scraping Google Finance Fundamentals Data"
   task :google_finance => :environment do
-    # do something
-    require 'open-uri'
-
-    url = "https://www.google.com/finance?q=NYSE%3ARIO&fstype=ii"
-    document = open(url).read
-    #puts document
-
-
-
-    html_doc = Nokogiri::HTML(document)
-
-    # columns
-    row_name = html_doc.css("div.id-incannualdiv > table.gf-table.rgt > tbody > tr > td.lft.lm").text
-    puts row_name
-    yr2010 = html_doc.css("div.id-incannualdiv > table.gf-table.rgt > tbody > tr > td:nth-child(2).r").text
-    puts yr2010
-    yr2009 = html_doc.css("div.id-incannualdiv > table.gf-table.rgt > tbody > tr > td:nth-child(3).r").text
-    puts yr2009
-    yr2008 = html_doc.css("div.id-incannualdiv > table.gf-table.rgt > tbody > tr > td:nth-child(4).r").text
-    puts yr2008
-    yr2007 = html_doc.css("div.id-incannualdiv > table.gf-table.rgt > tbody > tr > td.r.rm").text
-    puts yr2007
-
-
-    row_name.each do |row|
-      puts row
-      Company.create(row_name(row), yr2010(row), yr2009(row), yr2008(row, yr2007(row)))
+    stop = 0
+    Company.all.each do |company|
+      # stop += 1
+      # if stop < 100
+        record_data(company)
+      # end
     end
   end
+
+  def record_data(company)
+    require 'open-uri'
+    require 'nokogiri'
+
+    url = "http://www.google.ca/finance?q="+company.symbol.upcase+"&fstype=ii"
+
+    document = open(url).read
+    html_doc = Nokogiri::HTML(document)
+
+    # columns 
+    # puts html_doc.css("div.id-incannualdiv > table.gf-table.rgt > tbody > tr > td.lft.lm").text
+    # puts html_doc.css("div.id-incannualdiv > table.gf-table.rgt > tbody > tr > td:nth-child(2).r").text
+    # puts html_doc.css("div.id-incannualdiv > table.gf-table.rgt > tbody > tr > td:nth-child(3).r").text
+    # puts html_doc.css("div.id-incannualdiv > table.gf-table.rgt > tbody > tr > td:nth-child(4).r").text
+    # puts html_doc.css("div.id-incannualdiv > table.gf-table.rgt > tbody > tr > td.r.rm").text
+
+    details = html_doc.css("div.id-incannualdiv > table.gf-table.rgt > tbody > tr > td.r.rm")
+
+    if not details.any?
+      return
+    end
+
+    new_record = company.annual_incomes.new
+
+    AnnualIncome.columns[4..52].each_with_index do |column, index|
+      new_record["#{column.name}"] = details[index].text
+      new_record.save
+    end
+  end
+
 
   task :make_companies => :environment do
     require 'open-uri'
@@ -48,11 +55,11 @@ namespace :scrape do
       # puts row.inspect
       # puts row.symbol
       puts "#{name}: #{symbol}"
-      Company.create(:name => name, :symbol => symbol)
+      Company.create(:name => name.strip, :symbol => symbol.strip)
     end
     #destroy the header
-    Company.first.destroy_all
-    
+    Company.first.destroy
+
     # csv_text = File.read('lib/tasks/Languages.csv')
     # csv = CSV.parse(csv_text, :headers => true)
 
